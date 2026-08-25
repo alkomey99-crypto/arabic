@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>لعبة اللام الشمسية والقمرية</title>
+<style>
+@font-face{font-family:Shahrazad;src:local("Scheherazade New"),local("Scheherazade")}
+*{box-sizing:border-box}
+body{margin:0;font-family:Shahrazad,"Tahoma",sans-serif;background:linear-gradient(135deg,#fff4a8,#bdefff);min-height:100vh;color:#263238}
+.container{max-width:850px;margin:auto;padding:18px}
+.card{background:#fff;border-radius:28px;padding:25px;box-shadow:0 10px 30px #0002;text-align:center}
+h1{color:#e65100;font-size:clamp(28px,7vw,48px);margin:8px}
+.teacher{font-size:22px;color:#1565c0;font-weight:bold}
+input{width:90%;max-width:500px;padding:16px;border:3px solid #64b5f6;border-radius:18px;font-size:22px;text-align:center;margin:20px}
+button{border:0;border-radius:18px;padding:14px 25px;margin:7px;font-size:20px;font-family:inherit;font-weight:bold;cursor:pointer;background:#42a5f5;color:white;box-shadow:0 5px 0 #1976d2}
+button:active{transform:translateY(3px);box-shadow:0 2px 0 #1976d2}
+.hidden{display:none}
+.emoji{font-size:60px}
+.qnum{color:#8e24aa;font-weight:bold;font-size:20px}
+.question{font-size:30px;font-weight:bold;margin:18px 0}
+.answers{display:grid;gap:12px}
+.answer{background:#ffca28;color:#4e342e;box-shadow:0 5px 0 #f9a825}
+.answer.correct{background:#66bb6a;color:white}
+.answer.wrong{background:#ef5350;color:white}
+.feedback{font-size:25px;font-weight:bold;min-height:42px;margin:15px}
+.bar{height:16px;background:#eee;border-radius:20px;overflow:hidden}
+.fill{height:100%;width:0;background:#26a69a;transition:.4s}
+.score{font-size:24px}
+.finalScore{font-size:58px;color:#e65100;font-weight:bold}
+.small{font-size:17px;color:#607d8b}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div id="start" class="card">
+<div class="emoji">☀️🌙</div>
+<h1>لعبة اللام الشمسية والقمرية</h1>
+<div class="teacher">المعلمة: تسنيم الشوابكة</div>
+<p>للصف الرابع الأساسي 🇵🇸</p>
+<input id="student" placeholder="اكتب اسم الطالب هنا" autocomplete="off">
+<br><button onclick="startGame()">🚀 ابدأ اللعبة</button>
+<p class="small">لعبة تعليمية تعمل بالكامل دون الحاجة إلى الإنترنت.</p>
+</div>
+
+<div id="game" class="card hidden">
+<div class="qnum" id="qnum"></div>
+<div class="bar"><div class="fill" id="fill"></div></div>
+<div class="question" id="question"></div>
+<div class="answers" id="answers"></div>
+<div class="feedback" id="feedback"></div>
+<div class="score">⭐ النتيجة: <span id="score">0</span></div>
+</div>
+
+<div id="final" class="card hidden">
+<div class="emoji">🎉🏆🎊</div>
+<h1>أحسنت!</h1>
+<h2 id="finalName"></h2>
+<div>نتيجتك</div>
+<div class="finalScore" id="finalScore"></div>
+<p id="finalMsg"></p>
+<button onclick="location.reload()">🔄 العب مرة أخرى</button>
+</div>
+
+</div>
+
+<script>
+const questions=[
+["أي كلمة تحتوي على لام شمسية؟",["الشَّمس","القمر","الكتاب","الباب"],0],
+["أي كلمة تحتوي على لام قمرية؟",["النَّهر","الشَّجرة","البيت","الطَّريق"],2],
+["ماذا يحدث للام في اللام الشمسية؟",["تُلفظ بوضوح","لا تُنطق وتُدغم","تُحذف الكلمة","تُكتب مرتين"],1],
+["ماذا نضع على الحرف بعد اللام الشمسية؟",["سكون","تنوين","شدة","فتحة فقط"],2],
+["ماذا نضع على اللام القمرية؟",["شدة","سكون","تنوين","لا شيء"],1],
+["اختر الكلمة ذات اللام القمرية.",["السَّماء","الطَّالب","الْقمر","النَّاس"],2],
+["اختر الكلمة ذات اللام الشمسية.",["الْكتاب","الْباب","الزَّهرة","الْقلم"],2],
+["أي كلمة تُنطق فيها اللام بوضوح؟",["الشَّمس","النُّور","الْبيت","الصَّف"],2],
+["أي كلمة تُدغم فيها اللام؟",["الْقمر","الْعلم","الرَّبيع","الْباب"],2],
+["كلمة (الطَّريق) نوع اللام فيها:",["قمرية","شمسية","ليست لامًا","تنوين"],1],
+["كلمة (الْكتاب) نوع اللام فيها:",["شمسية","قمرية","مشددة","تنوين"],1],
+["أي زوج صحيح؟",["الشمس: قمرية / القمر: شمسية","الشمس: شمسية / القمر: قمرية","كلاهما شمسية","كلاهما قمرية"],1],
+["أي كلمة تبدأ بلام شمسية؟",["الورد","الأسد","الزيتون","البحر"],2],
+["أي كلمة تبدأ بلام قمرية؟",["النجم","الدَّرس","العصفور","السماء"],2],
+["اختر العبارة الصحيحة.",["اللام الشمسية تُنطق دائمًا","اللام القمرية لا تُنطق","اللام الشمسية لا تُنطق ويكون الحرف بعدها مشددًا","لا فرق بينهما"],2]
+];
+
+let i=0,score=0,name="",locked=false;
+
+const cheers=[
+"🌟 رائع! إجابة صحيحة!",
+"👏 أحسنت!",
+"🎉 ممتاز يا بطل!",
+"💪 رائع، استمر!",
+"🏆 إجابة مميزة!"
+];
+
+const wrong=[
+"🙂 حاول مرة أخرى في السؤال القادم!",
+"💡 لا بأس، تعلّمنا شيئًا جديدًا!",
+"🌈 استمر، أنت تستطيع!"
+];
+
+function beep(ok){
+try{
+let c=new (window.AudioContext||window.webkitAudioContext)(),
+o=c.createOscillator(),g=c.createGain();
+o.connect(g);g.connect(c.destination);
+o.frequency.value=ok?720:220;
+o.type=ok?"sine":"square";
+g.gain.setValueAtTime(.12,c.currentTime);
+g.gain.exponentialRampToValueAtTime(.001,c.currentTime+.25);
+o.start();o.stop(c.currentTime+.25);
+}catch(e){}
+}
+
+function startGame(){
+name=document.getElementById("student").value.trim()||"الطالب";
+document.getElementById("start").classList.add("hidden");
+document.getElementById("game").classList.remove("hidden");
+show();
+}
+
+function show(){
+locked=false;
+document.getElementById("qnum").textContent=`السؤال ${i+1} من ${questions.length}`;
+document.getElementById("fill").style.width=((i)/questions.length*100)+"%";
+document.getElementById("question").textContent=questions[i][0];
+document.getElementById("feedback").textContent="";
+const box=document.getElementById("answers");
+box.innerHTML="";
+questions[i][1].forEach((a,n)=>{
+let b=document.createElement("button");
+b.className="answer";
+b.textContent=a;
+b.onclick=()=>answer(n,b);
+box.appendChild(b);
+});
+document.getElementById("score").textContent=score;
+}
+
+function answer(n,btn){
+if(locked)return;
+locked=true;
+let ok=n===questions[i][2];
+beep(ok);
+
+if(ok){
+score++;
+btn.classList.add("correct");
+document.getElementById("feedback").textContent=cheers[Math.floor(Math.random()*cheers.length)];
+}else{
+btn.classList.add("wrong");
+document.getElementById("feedback").textContent=wrong[Math.floor(Math.random()*wrong.length)];
+}
+
+document.getElementById("score").textContent=score;
+
+[...document.querySelectorAll(".answer")].forEach((b,k)=>{
+if(k===questions[i][2])b.classList.add("correct");
+b.disabled=true;
+});
+
+setTimeout(()=>{
+i++;
+if(i<questions.length)show();
+else finish();
+},1100);
+}
+
+function finish(){
+document.getElementById("game").classList.add("hidden");
+document.getElementById("final").classList.remove("hidden");
+document.getElementById("finalName").textContent="الطالب: "+name;
+document.getElementById("finalScore").textContent=score+" / "+questions.length;
+
+let m=
+score===questions.length
+?"🏆 علامة كاملة! أنت بطل اللام الشمسية والقمرية!"
+:score>=12
+?"🌟 ممتاز جدًا! استمر بهذا التفوق!"
+:score>=9
+?"👏 أحسنت! مراجعة بسيطة وستصبح رائعًا!"
+:"💪 لا تستسلم! أعد اللعبة وتعلّم أكثر!";
+
+document.getElementById("finalMsg").textContent=m;
+}
+</script>
+</body>
+</html>
